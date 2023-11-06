@@ -12,11 +12,13 @@ def jaccard_loss(predicted, target, smooth=1e-5):
     """
     Вычисляет Jaccard loss (IoU) между предсказанными и целевыми изображениями.
 
-    :param predicted: Предсказанные изображения в формате NumPy.
-    :param target: Целевые изображения в формате NumPy.
-    :param smooth: Сглаживающий параметр для избежания деления на ноль.
+    Args:
+        - predicted (numpy.ndarray): Предсказанные изображения в формате NumPy.
+        - target (numpy.ndarray): Целевые изображения в формате NumPy.
+        - smooth (float): Сглаживающий параметр для избежания деления на ноль.
 
-    :return: Значение Jaccard loss.
+    Returns:
+        - float: Значение Jaccard loss.
     """
     predicted = torch.tensor(predicted)
     target = torch.tensor(target).detach()
@@ -34,11 +36,13 @@ def dice_loss(predicted, target, smooth=1e-5):
     """
     Вычисляет Dice loss между предсказанными и целевыми изображениями.
 
-    :param predicted: Предсказанные изображения в формате NumPy.
-    :param target: Целевые изображения в формате NumPy.
-    :param smooth: Сглаживающий параметр для избежания деления на ноль.
+    Args:
+        - predicted (numpy.ndarray): Предсказанные изображения в формате NumPy.
+        - target (numpy.ndarray): Целевые изображения в формате NumPy.
+        - smooth (float): Сглаживающий параметр для избежания деления на ноль.
 
-    :return: Значение Dice loss.
+    Returns:
+        - float: Значение Dice loss.
     """
     predicted = torch.tensor(predicted)
     target = torch.tensor(target).detach()
@@ -56,11 +60,13 @@ def analyzer (src : List[torch.Tensor], tgt: np.ndarray, estimator: Callable) ->
     """
     Анализирует результаты оценки моделей с разными функциями потерь и долями данных для обучения.
 
-    :param src: Список тензоров с изображениями.
-    :param tgt: Целевые изображения в формате NumPy.
-    :param estimator: Функция оценки, например, jaccard_loss или dice_loss.
+    Args:
+        - src (List[torch.Tensor]): Список тензоров с изображениями.
+        - tgt (numpy.ndarray): Целевые изображения в формате NumPy.
+        - estimator (Callable): Функция оценки, например, jaccard_loss или dice_loss.
 
-    :return: Ничего не возвращает, но отображает график ошибок.
+    Returns:
+        - None
     """
     # Инициализируем препроцессор
     P = ImagePreprocessor()

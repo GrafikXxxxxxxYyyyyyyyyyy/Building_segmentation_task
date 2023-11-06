@@ -13,8 +13,14 @@ class ImagePreprocessor ():
     
     def read_image (self, dir):
         """
-        Input: dir_name
-        Output: np.ndarray=(size, size, 3), np.ndarray=(size, size, 1) - BGR uint8 images
+        Читает изображения из указанного каталога и сегментационную маску, объединяет их в одно BGR изображение.
+
+        Args:
+            - dir (str): Имя каталога, содержащего изображения.
+
+        Returns:
+            - img (np.ndarray): Цветное изображение в формате BGR.
+            - mask (np.ndarray): Сегментационная маска в формате grayscale.
         """
         # Читаем 3 канала изображения
         img_red = cv2.imread(f'data/{dir}/RED.tif')
@@ -41,7 +47,17 @@ class ImagePreprocessor ():
                             mask=False, 
                             as_tensor=True):
         """
-        Разбивает большое изображение на сегменты нужного размера
+        Разбивает большое изображение на сегменты нужного размера.
+
+        Args:
+            - img (np.ndarray): Входное изображение.
+            - chunk_size (int): Размер чанков.
+            - output_size (int): Размер выходных изображений.
+            - mask (bool): Если True, работает с маской.
+            - as_tensor (bool): Если True, возвращает как тензор.
+
+        Returns:
+            - chunks (list of np.ndarray or torch.Tensor): Список чанков изображения.
         """
         # Определяем количество чанков
         N = max(img.shape[0] // chunk_size, img.shape[1] // chunk_size) + 1
@@ -72,7 +88,7 @@ class ImagePreprocessor ():
             else:
                 t_chunks = torch.zeros((N*N, 3, output_size, output_size))
 
-            # В цикле по ивсем нарезанным чанкам собираем тензор
+            # В цикле по всем нарезанным чанкам собираем тензор
             for k, chunk in enumerate(chunks):
                 t_chunks[k:k+1] = self.to_tensor(chunk, mask)
 
@@ -87,7 +103,15 @@ class ImagePreprocessor ():
                chunk_size=164, 
                mask=False):
         """
-        Input: List [np.ndarray]
+        Объединяет чанки изображения в одно большое изображение.
+
+        Args:
+            - chunks (list of np.ndarray): Список чанков изображения.
+            - chunk_size (int): Размер чанков.
+            - mask (bool): Если True, работает с маской.
+
+        Returns:
+            - united_img (np.ndarray): Объединенное изображение.
         """
         N = int(np.sqrt(len(chunks)))
 
@@ -106,8 +130,14 @@ class ImagePreprocessor ():
 
     def to_tensor (self, img, mask=True):
         """
-        Input: np.ndarray = (size, size, n_channels)
-        Output: torch.tensor = [1, n_channels, size, size]
+        Преобразует изображение в тензор.
+
+        Args:
+            - img (np.ndarray): Входное изображение.
+            - mask (bool): Если True, преобразует как маску.
+
+        Returns:
+            - t_img (torch.Tensor): Тензор изображения.
         """
         # Нормировка значений в зависимости от маски
         if mask is True:
@@ -118,14 +148,20 @@ class ImagePreprocessor ():
         # [256, 256, 3] --> [3, 256, 256]
         t_img = torch.transpose(t_img, 0, 2)
         
-        return t_img.unsqueeze(0) # [3, 256, 256] --> [1, 3, 256, 256]
+        return t_img.unsqueeze(0)
     
 
 
     def to_img (self, tensor, target_size=164):
         """
-        Input: torch.tensor = [n_channels, size, size]
-        Output: np.ndarray = (size, size, n_channels)
+        Преобразует тензор в изображение.
+
+        Args:
+            - tensor (torch.Tensor): Входной тензор.
+            - target_size (int): Целевой размер изображения.
+
+        Returns:
+            - img (np.ndarray): Преобразованное изображение.
         """
         img = torch.transpose(tensor*255, 0, 2).detach().numpy().astype(dtype=np.uint8)
         img = np.clip(img, 0, 255, dtype=np.uint8)
@@ -140,7 +176,16 @@ class ImagePreprocessor ():
 
     def clear_dataset (self, images, masks, p=0.1):
         """
-        Очищает выборку данных от шумовых чанков
+        Очищает выборку данных от шумовых чанков.
+
+        Args:
+            - images (torch.Tensor): Тензор изображений.
+            - masks (torch.Tensor): Тензор масок.
+            - p (float): Порог для удаления шумовых чанков.
+
+        Returns:
+            - clear_imgs (torch.Tensor): Очищенные изображения.
+            - clear_masks (torch.Tensor): Очищенные маски.
         """
         norm = masks.shape[2] * masks.shape[2]
 
@@ -163,7 +208,13 @@ class ImagePreprocessor ():
 
     def show (self, img, tgt=None):
         """
-        Input: img - np.ndarray, tgt - np.ndarray/None
+        Отображает изображение и, если задана маска, показывает сегментацию.
+
+        Args:
+            - img (np.ndarray): Исходное изображение.
+            - tgt (np.ndarray): Маска сегментации (опционально).
+
+        Returns: None
         """
         if tgt is None:
             plt.figure(figsize=(10, 5))

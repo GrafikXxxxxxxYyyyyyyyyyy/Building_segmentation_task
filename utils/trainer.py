@@ -8,6 +8,17 @@ from tqdm.notebook import tqdm
 
 #########################################################################################################
 def batch_generator (X, Y, batch_size=10):
+    """
+    Генератор батчей для обучения.
+
+    Args:
+        - X (numpy.ndarray): Массив признаков.
+        - Y (numpy.ndarray): Массив целевых значений.
+        - batch_size (int, optional): Размер батча. По умолчанию 10.
+
+    Yields:
+        - tuple: Батч признаков и соответствующих целевых значений.
+    """
     if X.shape[0] == Y.shape[0]:
         idxs = np.arange(X.shape[0]) # выбираем все строки нашего набора данных
         np.random.shuffle(idxs) # рандомно встряхиваем индексы
@@ -25,6 +36,20 @@ def batch_generator (X, Y, batch_size=10):
 
 #########################################################################################################
 class Callback():
+    """
+    Класс для отслеживания метрик обучения и вывода их в TensorBoard.
+
+    Args:
+        - X (numpy.ndarray): Массив признаков для валидации.
+        - Y (numpy.ndarray): Массив меток для валидации.
+        - writer (SummaryWriter): Объект для записи метрик в TensorBoard.
+        - loss_function (torch.nn.Module): Функция потерь для оценки качества модели.
+        - delimeter (int): Частота записи метрик (каждые `delimeter` итераций).
+        - batch_size (int): Размер мини-пакета для валидации.
+
+    Methods:
+        - forward(model, loss): Вызывается после каждой итерации обучения для записи метрик.
+    """
     def __init__ (self, 
                   X,
                   Y, 
@@ -76,6 +101,72 @@ class Callback():
 
 
 #########################################################################################################
+def train_on_batch(model, x_batch, y_batch, optimizer, loss_function):
+    """
+    Функция для обучения модели на одном мини-пакете данных.
+
+    Args:
+        - model (torch.nn.Module): Модель для обучения.
+        - x_batch (torch.Tensor): Мини-пакет признаков.
+        - y_batch (torch.Tensor): Мини-пакет меток.
+        - optimizer (torch.optim.Optimizer): Оптимизатор для обновления параметров модели.
+        - loss_function (torch.nn.Module): Функция потерь для обучения модели.
+
+    Returns:
+        - float: Значение функции потерь на данном мини-пакете данных.
+    """
+    model.train()
+    model.zero_grad()
+    
+    output = model(x_batch)
+    
+    loss = loss_function(output, y_batch)
+    loss.backward()
+
+    optimizer.step()
+
+    return loss.cpu().item()
+#########################################################################################################
+
+
+
+#########################################################################################################
+def train_epoch(train_generator, 
+                model, 
+                loss_function, 
+                optimizer, 
+                callback = None):
+    """
+    Функция для обучения модели на одной эпохе.
+
+    Args:
+        - train_generator (generator): Генератор мини-пакетов данных.
+        - model (torch.nn.Module): Модель для обучения.
+        - loss_function (torch.nn.Module): Функция потерь для обучения модели.
+        - optimizer (torch.optim.Optimizer): Оптимизатор для обновления параметров модели.
+        - callback (Callback, optional): Обратный вызов для отслеживания метрик обучения.
+
+    Returns:
+        - float: Среднее значение функции потерь на этой эпохе.
+    """
+    epoch_loss = 0
+    total = 0
+    for it, (batch_of_x, batch_of_y) in enumerate(train_generator):
+        batch_loss = train_on_batch(model, batch_of_x, batch_of_y, optimizer, loss_function)
+        
+        if callback is not None:
+            with torch.no_grad():
+                callback(model, batch_loss)
+            
+        epoch_loss += batch_loss*len(batch_of_x)
+        total += len(batch_of_x)
+    
+    return epoch_loss/total
+#########################################################################################################
+
+
+
+#########################################################################################################
 def trainer(X,
             Y,
             model, 
@@ -85,6 +176,23 @@ def trainer(X,
             optimizer,
             lr = 0.001,
             callback = None):
+    """
+    Функция для обучения модели.
+
+    Args:
+        - X (torch.Tensor): Тензор признаков для обучения.
+        - Y (torch.Tensor): Тензор меток для обучения.
+        - model (torch.nn.Module): Модель для обучения.
+        - loss_function (torch.nn.Module): Функция потерь для обучения модели.
+        - count_of_epoch (int): Количество эпох обучения.
+        - batch_size (int): Размер мини-пакета.
+        - optimizer (torch.optim.Optimizer): Оптимизатор для обновления параметров модели.
+        - lr (float): Скорость обучения.
+        - callback (Callback, optional): Обратный вызов для отслеживания метрик обучения.
+
+    Returns:
+        - None
+    """
 
     optim = optimizer(model.parameters(), lr=lr)
     
@@ -106,45 +214,4 @@ def trainer(X,
                                  callback=callback)
         
         iterations.set_postfix({'train epoch loss': epoch_loss})
-#########################################################################################################
-
-
-
-#########################################################################################################
-def train_epoch(train_generator, 
-                model, 
-                loss_function, 
-                optimizer, 
-                callback = None):
-    
-    epoch_loss = 0
-    total = 0
-    for it, (batch_of_x, batch_of_y) in enumerate(train_generator):
-        batch_loss = train_on_batch(model, batch_of_x, batch_of_y, optimizer, loss_function)
-        
-        if callback is not None:
-            with torch.no_grad():
-                callback(model, batch_loss)
-            
-        epoch_loss += batch_loss*len(batch_of_x)
-        total += len(batch_of_x)
-    
-    return epoch_loss/total
-#########################################################################################################
-
-
-
-#########################################################################################################
-def train_on_batch(model, x_batch, y_batch, optimizer, loss_function):
-    model.train()
-    model.zero_grad()
-    
-    output = model(x_batch)
-    
-    loss = loss_function(output, y_batch)
-    loss.backward()
-
-    optimizer.step()
-
-    return loss.cpu().item()
 #########################################################################################################
