@@ -9,6 +9,15 @@ from preprocessing.preprocessor import ImagePreprocessor
 
 
 def jaccard_loss(predicted, target, smooth=1e-5):
+    """
+    Вычисляет Jaccard loss (IoU) между предсказанными и целевыми изображениями.
+
+    :param predicted: Предсказанные изображения в формате NumPy.
+    :param target: Целевые изображения в формате NumPy.
+    :param smooth: Сглаживающий параметр для избежания деления на ноль.
+
+    :return: Значение Jaccard loss.
+    """
     predicted = torch.tensor(predicted)
     target = torch.tensor(target).detach()
     
@@ -22,6 +31,15 @@ def jaccard_loss(predicted, target, smooth=1e-5):
 
 
 def dice_loss(predicted, target, smooth=1e-5):
+    """
+    Вычисляет Dice loss между предсказанными и целевыми изображениями.
+
+    :param predicted: Предсказанные изображения в формате NumPy.
+    :param target: Целевые изображения в формате NumPy.
+    :param smooth: Сглаживающий параметр для избежания деления на ноль.
+
+    :return: Значение Dice loss.
+    """
     predicted = torch.tensor(predicted)
     target = torch.tensor(target).detach()
     
@@ -35,6 +53,15 @@ def dice_loss(predicted, target, smooth=1e-5):
 
 
 def analyzer (src : List[torch.Tensor], tgt: np.ndarray, estimator: Callable) -> None:
+    """
+    Анализирует результаты оценки моделей с разными функциями потерь и долями данных для обучения.
+
+    :param src: Список тензоров с изображениями.
+    :param tgt: Целевые изображения в формате NumPy.
+    :param estimator: Функция оценки, например, jaccard_loss или dice_loss.
+
+    :return: Ничего не возвращает, но отображает график ошибок.
+    """
     # Инициализируем препроцессор
     P = ImagePreprocessor()
 
