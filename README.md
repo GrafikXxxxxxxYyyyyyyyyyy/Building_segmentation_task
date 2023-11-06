@@ -1,4 +1,4 @@
-# Buildings segmentation task
+# Buildings segmentation task (Skoltech)
 Данный репозиторий представляет собой задачу обучения нейронной сети для сегментирования зданий на спутниковых изображениях
 
 
